@@ -6,26 +6,27 @@ import org.junit.runner._
 import org.specs2.mock._
 import scala.util.Success
 
-
 @RunWith(classOf[JUnitRunner])
 class ChatServiceSpec extends Specification with Mockito {
- "ChatService" >> {
+  val chatRepository = mock[ChatRepository]
+  val config = mock[Config]
+ 
+  val chat1Id = ChatId("Chat-1")
+  val user1Id = UserId("User-1")
+  val chat1 = Chat(chat1Id, user1Id)
+  
+  config.chatRepository returns chatRepository
+  
+  "ChatService" >> {
     "must return a valid chat for an empty repository" >> {
-      val chatRepository = mock[ChatRepository]
-      val config = mock[Config]
-      config.chatRepository returns chatRepository
-      chatRepository.contains(ChatId("Chat-1")) returns false
-      val chat = Chat(ChatId("Chat-1"), UserId("Tim"))
-      chatRepository.store(chat) returns (Success(chat))
-      val chatTry = ChatService.open(UserId("Tim"), ChatId("Chat-1")).run(config)
-      chatTry.isSuccess
+      chatRepository.contains(chat1Id) returns false
+      chatRepository.store(chat1) returns (Success(chat1))
+      val chatTry = ChatService.open(user1Id,chat1Id ).run(config)
+      chatTry.isSuccess && chatTry.get == chat1
     }
     "must return a failure for duplicate id" >> {
-   val chatRepository = mock[ChatRepository]
-      val config = mock[Config]
-      config.chatRepository returns chatRepository
-      chatRepository.contains(ChatId("Chat-1")) returns true
-      val chatTry = ChatService.open(UserId("Tim"), ChatId("Chat-1")).run(config)
+      chatRepository.contains(chat1Id) returns true
+      val chatTry = ChatService.open(user1Id, chat1Id).run(config)
       chatTry.isFailure
     }
   }
