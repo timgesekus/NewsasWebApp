@@ -19,7 +19,7 @@ object  ChatRepository extends ChatRepository {
   }
 
   def remove(chatId: ChatId) = {
-    if (contains(chatId)) {
+    if (chats.contains(chatId)) {
       chats = chats - chatId
       Success(chatId)
     } else {
@@ -28,7 +28,7 @@ object  ChatRepository extends ChatRepository {
   }
 
   def contains(chatId: ChatId) = {
-    chats.contains(chatId)
+    Success(chats.contains(chatId))
   }
 
   private def chatIdNotFoundFailure(chatId: ChatId) = {

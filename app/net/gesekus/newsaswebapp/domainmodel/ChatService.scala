@@ -20,7 +20,7 @@ object ChatService extends ChatService[Chat, ChatMessage, UserId, ChatId] with C
   def open(ownerId: UserId, chatId: ChatId) = {
     for {
       validatedChatId <- validateChatId(chatId)
-      newChat <- store(Chat(chatId, ownerId))
+      newChat <- store(Chat(validatedChatId, ownerId))
     } yield (newChat)
   }
   
@@ -37,4 +37,5 @@ object ChatService extends ChatService[Chat, ChatMessage, UserId, ChatId] with C
       chat <- find(chatId)
       storedChat <- store(chat.copy(messages = chatMessage :: chat.messages))
     } yield (storedChat)
+    
 }

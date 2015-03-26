@@ -10,12 +10,12 @@ import scala.util.Failure
 sealed trait ChatCommand
 case class OpenChat(chatId: ChatId, userId: UserId) extends ChatCommand
 case class CloseChat(chatId: ChatId) extends ChatCommand
-case class AddMessage(chatId: ChatId, chatMessage: ChatMessage) extends ChatCommand
+case class AddChatMessage(chatId: ChatId, chatMessage: ChatMessage) extends ChatCommand
 
 sealed trait ChatEvent
 case class ChatOpend(chat: Chat) extends ChatEvent
 case class ChatClosed(chatId: ChatId) extends ChatEvent
-case class MessageAdded(chatId: ChatId, chatMessage: ChatMessage) extends ChatEvent
+case class ChatMessageAdded(chatId: ChatId, chatMessage: ChatMessage) extends ChatEvent
 
 class ChatActor(config: Config) extends Actor with ActorLogging with Subscribable {
   val chatService = ChatService
@@ -23,12 +23,12 @@ class ChatActor(config: Config) extends Actor with ActorLogging with Subscribabl
   def receive = {
     case Subscribe => addSubscriber
     case Unsubscribe => removeSubscriber
-    case openChatMessage: OpenChat => openChat(openChatMessage)
-    case closeChatMessage: CloseChat => closeChat(closeChatMessage)
-    case addMessageMessage: AddMessage => addMessage(addMessageMessage)
+    case openChat: OpenChat => processOpenChat(openChat)
+    case closeChat: CloseChat => processCloseChat(closeChat)
+    case addChatMessage: AddChatMessage => processAddChatMessage(addChatMessage)
   }
 
-  def openChat(openChat: OpenChat) {
+  def processOpenChat(openChat: OpenChat) {
     val chatTry = chatService.open(openChat.userId, openChat.chatId).run(config)
     chatTry match {
       case Success(chat) => send(ChatOpend(chat))
@@ -36,19 +36,20 @@ class ChatActor(config: Config) extends Actor with ActorLogging with Subscribabl
     }
   }
 
-  def closeChat(closeChatMessage: CloseChat) {
+  def processCloseChat(closeChatMessage: CloseChat) {
     val chatTry = chatService.close(closeChatMessage.chatId).run(config)
     chatTry match {
       case Success(chatId) => send(ChatClosed(chatId))
       case Failure(e) => log.error(e, "Failed to close a chat")
     }
   }
-  def addMessage(addMessageMessage: AddMessage) {
+  
+  def processAddChatMessage(addMessageMessage: AddChatMessage) {
     val chatId = addMessageMessage.chatId
     val chatMessage = addMessageMessage.chatMessage
     val chatTry = chatService.addMessage(chatId, chatMessage).run(config)
     chatTry match {
-      case Success(chat) => send(MessageAdded(chatId, chatMessage))
+      case Success(chat) => send(ChatMessageAdded(chatId, chatMessage))
       case Failure(e) => log.error(e, "Failed to close a chat")
     }
   }
